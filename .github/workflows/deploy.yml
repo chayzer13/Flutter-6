@@ -3,6 +3,10 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -14,17 +18,18 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.7.2'
+          flutter-version: '3.19.0'
           channel: 'stable'
           
       - name: Install dependencies
         run: flutter pub get
         
-      - name: Build web
-        run: flutter build web --release --base-href /firebase_auth_app/
+      - name: Build
+        run: flutter build web --release
         
-      - name: Deploy to GitHub Pages
+      - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build/web 
+          publish_dir: ./build/web
+          commit_message: "Deploy to GitHub Pages" 
