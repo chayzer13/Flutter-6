@@ -1,7 +1,7 @@
 {
     "name": "firebase_auth_app",
     "short_name": "firebase_auth_app",
-    "start_url": ".",
+    "start_url": "/Flutter-6/",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
