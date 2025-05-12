@@ -15,6 +15,7 @@ class _AuthScreenState extends State<AuthScreen> {
   final _passwordController = TextEditingController();
   bool _isLogin = true;
   bool _isLoading = false;
+  bool _showResetPassword = false;
 
   @override
   void dispose() {
@@ -84,6 +85,70 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
+  Future<void> _resetPassword() async {
+    if (_emailController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Пожалуйста, введите email\nPlease enter your email'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final success = await authProvider.resetPassword(_emailController.text);
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Инструкции по сбросу пароля отправлены на ваш email\nPassword reset instructions sent to your email',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+        setState(() {
+          _showResetPassword = false;
+        });
+      } else {
+        final errorMessage = authProvider.error ?? 'Произошла ошибка\nAn error occurred';
+        final errorParts = errorMessage.split('\n');
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  errorParts[0],
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                if (errorParts.length > 1)
+                  Text(
+                    errorParts[1],
+                    style: const TextStyle(fontSize: 12),
+                  ),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -123,41 +188,67 @@ class _AuthScreenState extends State<AuthScreen> {
                     return null;
                   },
                 ),
-                TextFormField(
-                  controller: _passwordController,
-                  decoration: const InputDecoration(labelText: 'Пароль'),
-                  obscureText: true,
-                  enabled: !_isLoading,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Пожалуйста, введите пароль';
-                    }
-                    if (value.length < 6) {
-                      return 'Пароль должен быть не менее 6 символов';
-                    }
-                    return null;
-                  },
-                ),
+                if (!_showResetPassword) ...[
+                  TextFormField(
+                    controller: _passwordController,
+                    decoration: const InputDecoration(labelText: 'Пароль'),
+                    obscureText: true,
+                    enabled: !_isLoading,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Пожалуйста, введите пароль';
+                      }
+                      if (value.length < 6) {
+                        return 'Пароль должен быть не менее 6 символов';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
                 const SizedBox(height: 20),
                 if (_isLoading)
                   const CircularProgressIndicator()
                 else
                   Column(
                     children: [
-                      ElevatedButton(
-                        onPressed: _submit,
-                        child: Text(_isLogin ? 'Войти' : 'Зарегистрироваться'),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            _isLogin = !_isLogin;
-                          });
-                        },
-                        child: Text(_isLogin
-                            ? 'Создать новый аккаунт'
-                            : 'Уже есть аккаунт? Войти'),
-                      ),
+                      if (_isLogin && !_showResetPassword)
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _showResetPassword = true;
+                            });
+                          },
+                          child: const Text('Забыли пароль?'),
+                        ),
+                      if (_showResetPassword) ...[
+                        ElevatedButton(
+                          onPressed: _resetPassword,
+                          child: const Text('Сбросить пароль'),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _showResetPassword = false;
+                            });
+                          },
+                          child: const Text('Вернуться к входу'),
+                        ),
+                      ] else ...[
+                        ElevatedButton(
+                          onPressed: _submit,
+                          child: Text(_isLogin ? 'Войти' : 'Зарегистрироваться'),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _isLogin = !_isLogin;
+                            });
+                          },
+                          child: Text(_isLogin
+                              ? 'Создать новый аккаунт'
+                              : 'Уже есть аккаунт? Войти'),
+                        ),
+                      ],
                     ],
                   ),
               ],

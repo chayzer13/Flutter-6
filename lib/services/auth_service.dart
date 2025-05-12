@@ -9,6 +9,28 @@ class AuthService {
   // Stream для отслеживания состояния авторизации
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
+  // Сброс пароля
+  Future<void> resetPassword(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } on FirebaseAuthException catch (e) {
+      String message;
+      switch (e.code) {
+        case 'user-not-found':
+          message = 'Пользователь с таким email не найден\nUser with this email not found';
+          break;
+        case 'invalid-email':
+          message = 'Некорректный формат email\nInvalid email format';
+          break;
+        default:
+          message = 'Ошибка при сбросе пароля: ${e.message}\nPassword reset error: ${e.message}';
+      }
+      throw message;
+    } catch (e) {
+      throw 'Неизвестная ошибка: $e\nUnknown error: $e';
+    }
+  }
+
   // Регистрация
   Future<User?> signUp(String email, String password) async {
     try {

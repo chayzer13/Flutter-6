@@ -6,6 +6,7 @@ class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
   User? _user;
   String? _error;
+  bool _isLoading = false;
 
   AuthProvider() {
     _authService.authStateChanges.listen((User? user) {
@@ -17,6 +18,7 @@ class AuthProvider with ChangeNotifier {
   User? get user => _user;
   bool get isAuthenticated => _user != null;
   String? get error => _error;
+  bool get isLoading => _isLoading;
 
   Future<bool> signUp(String email, String password) async {
     try {
@@ -60,6 +62,24 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
     } catch (e) {
       _error = e.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<bool> resetPassword(String email) async {
+    try {
+      _error = null;
+      _isLoading = true;
+      notifyListeners();
+      
+      await _authService.resetPassword(email);
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    } finally {
+      _isLoading = false;
       notifyListeners();
     }
   }
